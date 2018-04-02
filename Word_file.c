@@ -6,14 +6,24 @@ typedef unsigned char byte;
 typedef unsigned short int word;
 typedef word adr;
 
-void do_halt() {
+void do_halt() 
+{
     printf("THE END!!!!\n");
     exit(0);
 }
 
-void do_add() {}
-void do_mov() {}
-void do_unknown() {}
+void do_add() 
+{
+	return;
+}
+void do_mov() 
+{
+	return;
+}
+void do_unknown() 
+{
+	return;
+}
 
 struct Command {
     word opcode;
@@ -22,9 +32,9 @@ struct Command {
     void (*func)();
     
 } commands[] = {
-    {0000000, 0177777, "halt", do_halt},  // 0xFFFF
     {0010000, 0170000, "mov",  do_mov}, 
     {0060000, 0170000, "add",  do_add}, 
+    {0000000, 0177777, "halt", do_halt},  // 0xFFFF
     {0000000, 0000000, "unknown", do_unknown}   // MUST BE THE LAST
 };
 
@@ -42,19 +52,20 @@ void w_write (adr a, word val);  // пишет значение val в "стар
 void run(adr pc0)
 {
 	adr pc = pc0;
-	int i;
+	unsigned int i;
 	while(1) 
 	{
 		word w = w_read(pc);
-		printf("%06o:%06o ", pc, w);
+		printf("%06o : %06o ", pc, w);
 		pc += 2;
-		for (i = 0; ;i++) 
+		for (i = 0; ; i++) 
 		{
 			struct Command cmd = commands[i];
 			if ((w & cmd.mask) == cmd.opcode) 
 			{
-				printf("%s ", cmd.name);
+				printf("%s\n", cmd.name);
 				cmd.func();
+				break;
 			}
 		}
 	}     
@@ -77,7 +88,8 @@ void w_write (adr a, word val) {
 	// mem[3] = 0x0b
 	mem[a+1] = (byte)((val>>8) & 0xFF);
 }
-word w_read  (adr a){
+word w_read  (adr a)
+{
 	assert(a%2 == 0);
 	return ((word)mem[a])|(((word)mem[a + 1])<<8);
 }
@@ -141,7 +153,8 @@ void mem_dump(adr start, word n) {
 int main() 
 {
 	f_load_file();
-	mem_dump(0x40, 0x4);
+	load_file();
+	run(0x200);
 	return 0;
 }
 
