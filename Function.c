@@ -8,7 +8,8 @@ typedef unsigned short int word;
 typedef word adr;
 
 byte mem[64*1024];
-word reg[8], nn;
+word reg[8];
+
 
 #define pc reg[7]
 #define LO(x) ((x) & 0xFF)
@@ -23,7 +24,7 @@ struct ModReg
 {
 	word adress; 
 	word value;
-} ss, dd;
+} ss, dd, nn;
 
 byte b_read  (adr a);            // читает из "старой памяти" mem байт с "адресом" a.
 void b_write (adr a, byte val);  // пишет значение val в "старую память" mem в байт с "адресом" a.
@@ -40,8 +41,8 @@ void do_halt();
 void do_sob();
 void print_registers();
 void run(adr pc0);
-word get_nn(word w);
-struct ModReg get_dd (word w);
+struct ModReg get_dd(word w);
+struct ModReg get_nn(word w);
 
 struct Command 
 {
@@ -161,23 +162,27 @@ void do_halt()
 
 void do_add() 
 {
-	if((dd.adress % 2) == 0)
-		w_write(dd.adress, ss.value + dd.value);
-	else
+	if(dd.adress < 8)
 		reg[dd.adress] = ss.value + dd.value;
+	else
+		w_write(dd.adress, ss.value + dd.value);
 }
 void do_mov() 
 {
-	if((dd.adress % 2) == 0)
-		w_write(dd.adress, ss.value);
-	else
+	if(dd.adress < 8)
 		reg[dd.adress] = ss.value;
+	else
+		w_write(dd.adress, ss.value);
 }
 
 void do_sob() 
 {
-	//w_read(nn);
-	pc = pc - 2 * nn; //PC = PC - 2 * NN
+	if(nn.value != 0)
+	{
+		reg[7] = nn.adress;
+	}
+	else
+		exit(1);
 }
 
 void do_unknown() 
@@ -185,11 +190,7 @@ void do_unknown()
 	exit(1);
 }
 
-word get_nn(word w) 
-{
-	return w & 077;
-}
-struct ModReg get_dd (word w) 
+struct ModReg get_dd(word w) 
 {
 	int n = (w & 7);	// register number
 	int mode = (w >> 3) & 7;	// mode
@@ -213,13 +214,24 @@ struct ModReg get_dd (word w)
 				if (n == 7)
 					printf("#%o ", res.value);
 				else
-					printf("(r%d) ", n);
+					printf("(r%d)+ ", n);
 				break;
 		default:
 				printf("MODE %d NOT IMPLEMENTED YET!\n", mode);
 				exit(1);
 	}
 	return res;
+}
+
+struct ModReg get_nn(word w)
+{
+	int adress = (w & 077);
+	int n = (w & 0700);
+	struct ModReg res;
+	res.adress = adress;
+	res.value = reg[n];
+	printf("r%d ", n);
+	return res; 
 }
 
 void run(adr pc0) {
@@ -267,6 +279,21 @@ void print_registers()
 		printf("r%d = %o\n", i, reg[i]);
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
